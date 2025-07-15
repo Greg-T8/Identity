@@ -21,6 +21,11 @@
       - [Centralized User Repository](#centralized-user-repository)
       - [Early SSO Servers](#early-sso-servers)
       - [Federated Identity and SAML 2](#federated-identity-and-saml-2)
+      - [WS-Fed](#ws-fed)
+      - [OpenID](#openid)
+      - [OAuth 2](#oauth-2)
+      - [OpenID Connect (OIDC)](#openid-connect-oidc)
+      - [OAuth 2.1](#oauth-21)
 
 
 ## 1. The Hydra of Modern Identity
@@ -105,3 +110,69 @@ The SAML 2 (Security Assertion Markup Language) standard, published in 2005, pro
 With SAML 2, SaaS applications could redirect corporate users back to a corporate authentication service, known as an identity provider (IdP), for authentication.
 
 Identity federation provided a way to link an identity used in an application with an identity at the service provider.
+
+Companies could now have the advantages of single sign-on with both internal and SaaS applications.
+
+However, SAML 2 was no silver bullet. 
+- It was complex to configure and implement.
+- There was no viable business model to address consumer-facing scenarios, as users were unlikely to pay money for a consumer-facing identity service.
+- It only solved the authentication problem, not the authorization problem.
+
+At the time, applications were evolving to architectures based on REST APIs, and SAML 2 was not well suited for this.
+
+##### WS-Fed
+
+The Web Services Federation Language (WS-Fed) was created as part of a larger set of protocols known as WS-* specifications.
+
+The WS-Fed 1.2 specification, published in 2009, provided mechanisms to authorize access to managed resources for identities managed in other realms.
+
+Intially, ADFS only supported WS-Fed. ADFS introduced SAML 2 support in version 2.0, released in 2010.
+
+##### OpenID
+
+With SAML 2 only adopted in employee-facing scenarios, consumers were still forced to register for accounts with each application they used.
+
+A new industry group gave rise to a protocol called OpenID, which included the idea of a user-controlled identity solution for the consumer use case.
+
+The original OpenID protocol was never widely used, but it did highlight the need for user-centric identity solutions and laid the groundwork for OpenID Connect (OIDC).
+
+##### OAuth 2
+
+With the rise of social media, many consumer-facing websites were created that allowed users to upload content such as pictures.
+
+This gave rise to use cases where applications needed to retrieve content on the user's behalf. For example, a person who uploaded photos to a social media site might want to enable another website that printed photos to access their photos at the social media site.
+
+In the absence of a better solution, the user would have to provide their username and password to the photo printing site, which would then use that information to access the social media site.
+
+The OAuth 2 protocol addressed this by allowing a user to authorize a third-party application to access their resources without sharing their credentials.
+
+The OAuth 2 version allows a user to authorize one application, known as a client (the photo printing site), to send a request to an API, known as a resource server (the social media site), on the user's behalf to retrieve data at the resource server owned by the user.
+
+To accommodate this, the application interacts with an authorization server which authenticates a user as part of obtaining their consent for the application to access their resources.
+
+The application receives a token, whcih enables it to call the reosurce server on the user's behalf.
+
+By this time, Google and LinkedIn implemented OAuth 2, enabling consumer-facing applications to use OAuth 2 to access user data at these sites.
+
+There was one problem, though...
+
+OAuth 2 was not designed as a general authentication service and could not securely be used for this purpose, so another solution was needed.
+
+##### OpenID Connect (OIDC)
+
+OpenID Connect (OIDC) was designed to provide a key feature needed for an authentication service: the ability to verify the identity of a user based on the authentication performed by an authorization server.
+
+OIDC was devised as a layer on top of OAuth 2 to provide information in a standard format to applications about the identity of an authenticated user. This provided a solution for applications for user authentication as well as API authorization.
+
+Benefits of OIDC:
+- Website developers can delegate the work of implementing authentication and password reset logic to an OIDC provider.
+- Users can leverage one account to log in to many sites without exposing their account credentials to other sites.
+- Users have fewer usernames and passwords to remember, which reduces the risk of password reuse.
+- Providers benefit if OIDC attracts more users to their platform.
+- OIDC provides the SSO benefits of SAML 2 and when combined with OAuth 2, it provides a solution for both authentication and authorization.
+
+##### OAuth 2.1
+
+The OAuth 2.0 specification was published in 2012. By 2020, application developers had to read through a lot of OAuth 2-related documents to understand best practices for using OAuth 2 in different scenarios, such as browser-based applications, native mobile applications, and classic web applications.
+
+To address this, the OAuth working group began working on a new specification, OAuth 2.1, which aims to consolidate and simplify the OAuth 2.0 framework by incorporating best practices and removing deprecated features.
