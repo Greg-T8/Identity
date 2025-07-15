@@ -8,4 +8,4 @@ This is my learning space topics on modern identity|
 
 
 ## Book Notes
-- [Solving Identity Management in Modern Applications](/Books/price_development_fundamentals/notes.md) - by Yvonne Wilson and Abhishek Hingnikar
+- [Solving Identity Management in Modern Applications](/Books/Solving_Identity_Management/notes.md) - by Yvonne Wilson and Abhishek Hingnikar
