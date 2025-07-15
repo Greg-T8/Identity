@@ -8,8 +8,4 @@ This is my learning space topics on modern identity|
 
 
 ## Book Notes
-- [Solving Identity Management in Modern Applications](/Books/price_development_fundamentals/notes.md) - by Mark J. Price
-- [F# In Action](/Books/fsharp_in_action/notes.md) - by Isaac Abraham
-
-## Learn More
-- [F# History](https://fsharp.org/history/)
+- [Solving Identity Management in Modern Applications](/Books/price_development_fundamentals/notes.md) - by Yvonne Wilson and Abhishek Hingnikar
