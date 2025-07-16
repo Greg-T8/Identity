@@ -26,6 +26,14 @@
       - [OAuth 2](#oauth-2)
       - [OpenID Connect (OIDC)](#openid-connect-oidc)
       - [OAuth 2.1](#oauth-21)
+- [4. Identity Provisioning](#4-identity-provisioning)
+  - [Provisioning Options](#provisioning-options)
+    - [Self-Registration](#self-registration)
+      - [Progressive Profiling](#progressive-profiling)
+      - [Invite-Only Registration](#invite-only-registration)
+    - [Identity Migration](#identity-migration)
+      - [Support Legacy Hashing Algorithm](#support-legacy-hashing-algorithm)
+      - [Bulk Identity Migration](#bulk-identity-migration)
 
 
 ## 1. The Hydra of Modern Identity
@@ -63,6 +71,8 @@ An account is a local construct that is used to perform actions on an identity a
 An identity management (idM) system is a set of services that support the creation, modification, and removal of identities and associated accounts, including the authentication and authorization required to access resources.
 
 ### Events in the Life of an Identity
+
+The chapters in this book will cover the following events in the life of an identity:
 
 <img src="images/1752573516381.png" width="350" />
 
@@ -176,3 +186,72 @@ Benefits of OIDC:
 The OAuth 2.0 specification was published in 2012. By 2020, application developers had to read through a lot of OAuth 2-related documents to understand best practices for using OAuth 2 in different scenarios, such as browser-based applications, native mobile applications, and classic web applications.
 
 To address this, the OAuth working group began working on a new specification, OAuth 2.1, which aims to consolidate and simplify the OAuth 2.0 framework by incorporating best practices and removing deprecated features.
+
+## 4. Identity Provisioning
+
+An identity includes at least one identifier, such as a username or email address, and various user profile attributes.
+
+### Provisioning Options
+
+Here are some common approaaches for provisioning identities:
+- A user creates a new identity by filling out a self-registration form
+- A special case of self-registration is sending select users an invitation to sign up
+- User identities are transferred  from a previously existing user repository
+- An identity service with an existing repository of user identies is leveraged
+- An administrator or automated process creates identities
+
+#### Self-Registration
+
+Requires you to design and create a sign-up form. Form must be able to scale to handle large numbers of users. Self-registration necessitates privacy notices about the information you collect.
+
+| **Advantages**                                                 | **Disadvantages**                                     |
+| -------------------------------------------------------------- | ----------------------------------------------------- |
+| Ability to collect user attributes that don’t exist elsewhere. | May deter some prospective new users from signing up. |
+| Control over user registration experience.                     | Liability associated with storing login credentials.  |
+| Scalability through self-service.                              |                                                       |
+
+##### Progressive Profiling
+
+Progressive profiling is a technique where you build up user profile attributes over time, rather than asking for all attributes at once during registration.
+
+Progressive profiling reduces the friction that a lengthy sign-up form would present.
+
+##### Invite-Only Registration
+
+Used for situations where you create an account and assign it privileges before sending the invitation.
+
+| **Advantages**                                               | **Disadvantages**                                           |
+|--------------------------------------------------------------|------------------------------------------------------------|
+| Ability to collect user attributes not available from other sources. | The work to implement the invitation mechanism and control access to it. |
+| Control over user registration experience.                   | The work to issue invitations.                             |
+| Some protection against registration by hackers and bots.    | May deter some prospective new users from signing up.      |
+| Scalability through self-service if users invite others.     | Liability associated with storing login credentials.       |
+
+#### Identity Migration
+
+While most user profile attributes can be moved, passwords represent a challenge.
+
+Passwords are typically stored in a hashed format. Most systems use salts and iterations counts, which makes it difficult to import passwords from one system to another and have it be usable in the new system.
+
+##### Support Legacy Hashing Algorithm
+
+One solution is to move the hashed passwords to the new system and update the new system to support the legacy hashing algorithm. 
+
+
+| **Advantages**                                   | **Disadvantages**                                              |
+|--------------------------------------------------|----------------------------------------------------------------|
+| Avoids need for password reset.                 | Work to implement legacy hashing algorithm(s).                |
+| Transfers all accounts in a usable state.       | Liability associated with storing login credentials.          |
+|                                                  | Inherits any weakness associated with legacy hashing algorithms. |
+
+##### Bulk Identity Migration
+
+If it's not possible to support the legacy hashed passwords, you can extract the user profile attributes and create new accounts in the new system.
+
+| **Advantages**                                               | **Disadvantages**                                                                                     |
+|--------------------------------------------------------------|-------------------------------------------------------------------------------------------------------|
+| Transfers all users at once.                                 | Transfers all accounts, even inactive accounts, unless they are filtered out during the transfer.     |
+| Enables immediate shutdown of legacy user repository.        | Requires all users to set new passwords via account recovery, unless the new system supports legacy hashed passwords. |
+| No latency added at login time to check a legacy system for a user account. | Migrating all users at once may cause an outage or delay the migration if things go wrong and there is no backup plan. |
+| Code to transfer identities can be independent of application code. | If multiple applications use the legacy repository, they must migrate at the same time if the legacy repository is to be shut off after migration. |
+|                                                              | Liability associated with storing login credentials.                                                  |
