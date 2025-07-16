@@ -39,6 +39,12 @@
       - [Cross-Domain Account Creation](#cross-domain-account-creation)
     - [Leveraging Existing Identity Service](#leveraging-existing-identity-service)
   - [Selecting an Identity Service](#selecting-an-identity-service)
+    - [Self-Registered Identities](#self-registered-identities)
+    - [Organization Identities](#organization-identities)
+    - [Government Identities](#government-identities)
+  - [Identity Provider Selection](#identity-provider-selection)
+  - [Identity Proofing](#identity-proofing)
+  - [Choosing and Validating Identity Attributes](#choosing-and-validating-identity-attributes)
 
 
 ## 1. The Hydra of Modern Identity
@@ -322,3 +328,55 @@ It is important to vet an external identity service before trusting it.
 |                                                                               | May require collaborative troubleshooting with another organization when issues occur.                 |
 
 ### Selecting an Identity Service
+
+Characteristics of strong vs weak identities:
+
+| **Strong Identities**                                                         | **Weak Identities**                                                             |
+|-------------------------------------------------------------------------------|---------------------------------------------------------------------------------|
+| Linked to a real person, who can be held accountable for actions taken with the identity and associated accounts. | Anonymous, cannot be linked to a real person.                                   |
+| Identity attributes are validated during account issuance process.            | Little validation of identity attributes.                                       |
+| Issued by entity recognized as authoritative for a particular context.        | Issued by an entity with little recognized authority.                           |
+| Contains mechanisms to protect against forgery or unauthorized use.           | Few protections against forgery or unauthorized use.                            |
+
+#### Self-Registered Identities
+
+A self-registered identity, such as Gmail, is an example of a weak identity. You can sign up for these accounts using any identifier that is not already taken, e.g. santa.claus@yahoo.com.
+
+You do not have to supply true information in the sign-up form, and the service provider does not validate most of the identity data.
+
+#### Organization Identities
+
+Many of these identities meet the criteria for strong identities, as they are issued by an organization that is recognized as authoritative in a particular context.
+
+#### Government Identities
+
+Are an example of strong identities, as they are issued by a government entity that is recognized as authoritative in a particular context.
+
+### Identity Provider Selection
+
+There are many vendors that offer cloud-based identity services, such as Google Apps, Azure AD, Auth0, Amazon Cognito, Okta, and Ping Identity.
+
+Identity provider scenarios:
+
+| **Scenario**               | **Common Type(s) of Identity Provider**                                                                 |
+|-----------------------------|-------------------------------------------------------------------------------------------------------|
+| **B2C: Business to consumer** | Social Identity Providers<br>Identity services such as Azure AD or Auth0<br>Application-specific repository |
+| **B2E: Business to employee** | Identity services such as Google Apps, Azure AD, Auth0<br>Any OIDC or SAML 2–compliant identity provider |
+| **B2B: Business to business** | Identity services such as Google Apps, Azure AD, Auth0<br>Any OIDC or SAML 2–compliant provider controlled by the business customer |
+
+### Identity Proofing
+
+In the US, the Patriot Act requires that financial institutions verify the identity of their customers before opening an account. This is known as identity proofing.
+
+Providers, such as ID.me, Sumsub, Socure, and Trulioo, are examples of venddors that help validate identities of self-registered users.
+
+### Choosing and Validating Identity Attributes
+
+Advantages and disadvantages of account identifiers
+
+
+| **Advantages**                                                                 | **Disadvantages**                                                                                     |
+|-------------------------------------------------------------------------------|-------------------------------------------------------------------------------------------------------|
+| **Email:** Globally unique.<br>No need to hunt for a name that isn’t taken already.<br>May be easier to remember than a username.<br>Can double as a communication attribute, such as for password resets. | **Email:** May need to be changed by a user.<br>May be reassigned by an email provider to a new user.<br>May be reassigned by a corporate provider to a new user.<br>Terminated by the employer if a user leaves.<br>Not all companies issue email addresses.<br>Children may not have email addresses.<br>Family members may share an email address.<br>May expose personal information (user's name).<br>Exposure as display name may result in spam email. |
+| **Username:** Easier to set up multiple accounts at a site.<br>May be shorter to type on mobile devices.<br>Can be used in searches, allowing other attributes with personal data to be encrypted. | **Username:** Only unique within an application domain.<br>Merging user repositories problematic after acquisitions.<br>May be harder for a user to remember which username was used at each site.<br>A user may want to change a username over time.<br>May expose personal information if used for display and it contains personal information. |
+| **Phone number:** Globally unique (with country code).<br>No need to hunt for a free identifier.<br>Can double as a communication attribute, such as for password resets.<br>May be easier for a user to remember than a username. | **Phone number:** Exposure as display name may cause spam calls.<br>Might be reassigned to a new user over time.<br>May involve a charge to obtain a phone number.<br>More difficult for a person to set up multiple accounts at the same site.<br>May be changed by a user for various reasons.<br>May be terminated by a phone provider. |
