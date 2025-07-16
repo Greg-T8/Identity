@@ -34,6 +34,11 @@
     - [Identity Migration](#identity-migration)
       - [Support Legacy Hashing Algorithm](#support-legacy-hashing-algorithm)
       - [Bulk Identity Migration](#bulk-identity-migration)
+      - [Gradual Migration of Users](#gradual-migration-of-users)
+    - [Administrative Account Creation](#administrative-account-creation)
+      - [Cross-Domain Account Creation](#cross-domain-account-creation)
+    - [Leveraging Existing Identity Service](#leveraging-existing-identity-service)
+  - [Selecting an Identity Service](#selecting-an-identity-service)
 
 
 ## 1. The Hydra of Modern Identity
@@ -255,3 +260,65 @@ If it's not possible to support the legacy hashed passwords, you can extract the
 | No latency added at login time to check a legacy system for a user account. | Migrating all users at once may cause an outage or delay the migration if things go wrong and there is no backup plan. |
 | Code to transfer identities can be independent of application code. | If multiple applications use the legacy repository, they must migrate at the same time if the legacy repository is to be shut off after migration. |
 |                                                              | Liability associated with storing login credentials.                                                  |
+
+##### Gradual Migration of Users
+
+
+| **Advantages**                                                                 | **Disadvantages**                                                                                     |
+|-------------------------------------------------------------------------------|-------------------------------------------------------------------------------------------------------|
+| Inactive accounts can be weeded out.                                          | Requires that legacy identity store is accessible from new application’s authentication mechanism.    |
+| No password reset required (for users who log in during migration).           | Legacy identity store must remain accessible until enough identities are transferred.                 |
+| Spreads out risk of outages by migrating identities gradually (no big bang risk). | Transfer mechanism must be maintained throughout the gradual migration.                              |
+| Can support continued use of previous sign-up mechanisms or applications that use the legacy identity repository during the gradual migration. | A user’s first login after migration starts may have some latency as identity data is transferred from the legacy system. |
+|                                                                               | Potential for user confusion after password reset if other applications continue to use the legacy data store. |
+|                                                                               | Potential for user confusion if users can make user profile updates in both legacy and new systems after migration. |
+|                                                                               | Implementation work cannot be easily decoupled from the application team.                            |
+|                                                                               | Liability associated with storing login credentials.                                                 |
+
+
+#### Administrative Account Creation
+
+The approaches include:
+- Manual account creation
+- Automated account creation
+- Cross-domain acocunt creation
+
+##### Cross-Domain Account Creation
+
+Applicable sceanarios:
+- Maintaining employee accounts in external SaaS applications
+- Maintaining partner accounts in corporate identity repositories or applications
+- Maintaining business customer user accounts in business-facing applications
+- Maintaining guest professor or student accounts in educational institutions
+- Maintaining guest user accounts in public sector applications
+
+The industry-standard protocol, SCIM 2.0 (System for Cross-domain Identity Management), can be used to facilitate cross-domain account creation and management.
+
+SCIM 2.0 was defined in 2015 to provide a more standard approach to sending an5updating identify information from one domain to another.
+
+SCIM 2.0 is a RESTful API that uses JSON to represent user profile attributes and supports the creation, modification, and deletion of user accounts.
+
+SCIM also provides an optional common user schema, though mapping profile attributes between systems is usually required.
+
+
+| **Advantages**                                                                 | **Disadvantages**                                                                                     |
+|-------------------------------------------------------------------------------|-------------------------------------------------------------------------------------------------------|
+| User doesn’t fill out registration form.                                      | Time-consuming if not automated.                                                                     |
+| Administrator can assign customized privileges for the account.               | Requires care to ensure that only the user knows the password for the account created.               |
+| Can incorporate manual identity validation step if required by the organization creating the account. | Liability associated with storing login credentials if stored locally.                               |
+| Can be automated via workflow or identity provisioning software.              |                                                                                                       |
+#### Leveraging Existing Identity Service
+
+Popular with social providers. Involves less work for users.
+
+It is important to vet an external identity service before trusting it.
+
+| **Advantages**                                                                 | **Disadvantages**                                                                                     |
+|-------------------------------------------------------------------------------|-------------------------------------------------------------------------------------------------------|
+| Better user experience if it reduces the data required to sign up.            | You may have to collect additional profile information not available from the identity provider service. |
+| Easier for user to remember password if identity provider account is used frequently. | You need to evaluate the service and availability levels of the external identity service to ensure it meets your needs. |
+| You may not have to implement a login form or account recovery mechanism if all users authenticate via the identity provider service. | May require additional development or configuration work for each identity provider service to be used. |
+| Less risk if you do not store user passwords.                                 | May require configuration work at each identity provider service for each application you have, unless you use an authentication broker service. |
+|                                                                               | May require collaborative troubleshooting with another organization when issues occur.                 |
+
+### Selecting an Identity Service
