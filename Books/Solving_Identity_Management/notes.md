@@ -52,6 +52,10 @@
     - [Roles](#roles)
     - [Confidential and Public Clients](#confidential-and-public-clients)
     - [Client Profiles](#client-profiles)
+    - [Tokens and Authorization Code](#tokens-and-authorization-code)
+  - [How OAuth 2 Works](#how-oauth-2-works)
+    - [Authorization Code Grant](#authorization-code-grant)
+      - [Authorization Code Grant Type + PKCE](#authorization-code-grant-type--pkce)
 
 
 ## 1. The Hydra of Modern Identity
@@ -437,3 +441,49 @@ OAuth 2 defines three profiles for client applications based on application topo
 2. Browser-Based Application &mdash; Assumed to be a public client with code executing in the user's browser. Examples: A JavaScript-based single-page application (SPA) running in the browser. Such an application is assumed to be incapable of adequately securing credentials with which to authenticate itself to the authorization server.
 
 3. Native Application &mdash; Assumed to be a public client that is installed and executed on the user's device, such as a mobile appliction or desktop application.
+
+In practice, these definitions may overlap because a web application may serve up HTML pages that contain some JavaScript, and single-page applications may have a small back end.
+
+#### Tokens and Authorization Code
+
+OAuth 2 defines two security tokens and an intermediate authorization code:
+
+1. Authorization Code &mdash; An intermediary, opaque code returned to an application to obtain an access token and optionally a refresh token. Each authorization code is used once.
+
+2. Access Token &mdash; A token used by an application to access an API. It represents the application's authorization to call an API and has an expiration.
+
+3. Refresh Token &mdash; An optional token that can be used by an application to request a new access token when a prior access token has expired.
+
+### How OAuth 2 Works
+
+The OAuth 2 Authorization Framework defines different methods by which an application interacts with an authorization server to obtain authorization to call an API. Each method uses a credential, known as authorization grants, to obtain an access token.
+
+There are three main types of authorization grants:
+- Authorization code
+- Client credentials
+- Refresh token
+
+There were two additional grant types that were removed in OAuth 2.1:
+- Implicit grant
+- Resource owner password credentidals
+ 
+An additional grant type has been designed for devices which have limited capabilities for user interaction, i.e. scenarios for IoT; however, this grant type has not made it into the specification yet:
+- Client device
+
+#### Authorization Code Grant
+
+The authorization code grant uses two requests from the application to the authorization server to obtain an access token.
+
+First, the user's browser is redirected to the authorization server’s endpoint to approve an API call on their behalf. This redirect lets the server authenticate the user and get their consent. Once consent is given, the server sends the browser back to the application with an **authorization code**.
+
+Next, the application uses the authorization code to make a back-channel request to the authorization server’s token endpoint. The server then issues an access token, which the application can use to call the API.
+
+<img src='images/1754734214648.png' width=900 />
+
+The authorization code grant type was designed for confidential clients. It allows a secure application backend, which can safely store an authentication secret, to verify its identity with the authorization server when exchanging an authorization code for an access token.
+
+It also means the response with the access token can be delivered to the application back end, which will make subsequent API calls. 
+
+A side benefit is that tokens are returned via secure back-channel response. However, while originally optimized for confidential clients, the addition of PKCE enables other client types to use this grant type as well.
+
+##### Authorization Code Grant Type + PKCE
