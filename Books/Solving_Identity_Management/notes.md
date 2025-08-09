@@ -45,6 +45,13 @@
   - [Identity Provider Selection](#identity-provider-selection)
   - [Identity Proofing](#identity-proofing)
   - [Choosing and Validating Identity Attributes](#choosing-and-validating-identity-attributes)
+- [5. OAuth 2 and API Authorization](#5-oauth-2-and-api-authorization)
+  - [API Authorization](#api-authorization)
+  - [OAuth 2](#oauth-2-1)
+  - [Terminology](#terminology)
+    - [Roles](#roles)
+    - [Confidential and Public Clients](#confidential-and-public-clients)
+    - [Client Profiles](#client-profiles)
 
 
 ## 1. The Hydra of Modern Identity
@@ -380,3 +387,53 @@ Advantages and disadvantages of account identifiers
 | **Email:** Globally unique.<br>No need to hunt for a name that isn’t taken already.<br>May be easier to remember than a username.<br>Can double as a communication attribute, such as for password resets. | **Email:** May need to be changed by a user.<br>May be reassigned by an email provider to a new user.<br>May be reassigned by a corporate provider to a new user.<br>Terminated by the employer if a user leaves.<br>Not all companies issue email addresses.<br>Children may not have email addresses.<br>Family members may share an email address.<br>May expose personal information (user's name).<br>Exposure as display name may result in spam email. |
 | **Username:** Easier to set up multiple accounts at a site.<br>May be shorter to type on mobile devices.<br>Can be used in searches, allowing other attributes with personal data to be encrypted. | **Username:** Only unique within an application domain.<br>Merging user repositories problematic after acquisitions.<br>May be harder for a user to remember which username was used at each site.<br>A user may want to change a username over time.<br>May expose personal information if used for display and it contains personal information. |
 | **Phone number:** Globally unique (with country code).<br>No need to hunt for a free identifier.<br>Can double as a communication attribute, such as for password resets.<br>May be easier for a user to remember than a username. | **Phone number:** Exposure as display name may cause spam calls.<br>Might be reassigned to a new user over time.<br>May involve a charge to obtain a phone number.<br>More difficult for a person to set up multiple accounts at the same site.<br>May be changed by a user for various reasons.<br>May be terminated by a phone provider. |
+
+## 5. OAuth 2 and API Authorization
+
+### API Authorization
+
+An application may need to call an API on behalf of a user to access content owned by the user. Or it may call the API on its own behalf if teh application owns the desired content.
+
+<img src='images/1754731391748.png' width=800>
+
+### OAuth 2
+
+OAuth stands for "Open Authorization". The protocol was designed as an open standard, hence the "O".
+
+With OAuth 2, an application can obtain a user's consent to call an API on their behalf, without needing the user's credentials for the API site. An application cals also obtain authorization to call an API on its own behalf if it owns the content to be accessed.
+
+Prior to OAuth 2, the application needed the user's credentials to act on behalf of the user, putting the user's credentials at risk:
+
+<img src='images/1754731634769.png' width=800>
+
+With OAuth 2, an authorization server handles access requests for an API and returns a security token that can be used by the application to access the API.
+
+<img src='images/1754731938231.png' width=800>
+
+### Terminology
+
+#### Roles
+
+OAuth defines four roles in an authoriztion request:
+
+1. Resource Server &mdash; A service (with an API) storing protected resources to be accessed by an application.
+2. Resource Owner &mdash; A user or other entity that owns protected resources at the resource server
+3. Client &mdash; An application which needs to access resources at the resource server, on the resource owner's behalf or on its own behalf.
+4. Authorization Server &mdash; A service trusted by the resource server to authorize applications to call the resource server. It authenticates the application or resource owner and requests consent. With OAuth 2, the resource server (API) is a relying party to the authorization server. The authorization server and resource server may be operated by the same entity.
+
+#### Confidential and Public Clients
+
+OAuth 2 defines two client types:
+
+1. Confidential Client &mdash; An application that can secure store confidential secrets with which to authenticate itself to an authorization server. Confidential clients typically execute primarily on a protected server.
+2. Public Client &mdash; An application that can neither securely store a secret or credentials to authenticate itself to an authorization server. Public clients typically execute on the user's client device or in the client browser.
+
+#### Client Profiles
+
+OAuth 2 defines three profiles for client applications based on application topologies:
+
+1. Web Application &mdash; A confidential client with code executing on a protected, back-end server. The server can securely store any secrets needed for the client to authenticate itself as well as any tokens it receives from the authorization server. Such credentials are not exposed to the resource owner.
+
+2. Browser-Based Application &mdash; Assumed to be a public client with code executing in the user's browser. Examples: A JavaScript-based single-page application (SPA) running in the browser. Such an application is assumed to be incapable of adequately securing credentials with which to authenticate itself to the authorization server.
+
+3. Native Application &mdash; Assumed to be a public client that is installed and executed on the user's device, such as a mobile appliction or desktop application.
