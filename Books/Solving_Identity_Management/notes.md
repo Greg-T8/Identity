@@ -56,6 +56,7 @@
   - [How OAuth 2 Works](#how-oauth-2-works)
     - [Authorization Code Grant](#authorization-code-grant)
       - [Authorization Code Grant Type + PKCE](#authorization-code-grant-type--pkce)
+    - [Client Credentials Grant](#client-credentials-grant)
 
 
 ## 1. The Hydra of Modern Identity
@@ -242,12 +243,12 @@ Progressive profiling reduces the friction that a lengthy sign-up form would pre
 
 Used for situations where you create an account and assign it privileges before sending the invitation.
 
-| **Advantages**                                               | **Disadvantages**                                           |
-|--------------------------------------------------------------|------------------------------------------------------------|
+| **Advantages**                                                       | **Disadvantages**                                                        |
+| -------------------------------------------------------------------- | ------------------------------------------------------------------------ |
 | Ability to collect user attributes not available from other sources. | The work to implement the invitation mechanism and control access to it. |
-| Control over user registration experience.                   | The work to issue invitations.                             |
-| Some protection against registration by hackers and bots.    | May deter some prospective new users from signing up.      |
-| Scalability through self-service if users invite others.     | Liability associated with storing login credentials.       |
+| Control over user registration experience.                           | The work to issue invitations.                                           |
+| Some protection against registration by hackers and bots.            | May deter some prospective new users from signing up.                    |
+| Scalability through self-service if users invite others.             | Liability associated with storing login credentials.                     |
 
 #### Identity Migration
 
@@ -260,37 +261,37 @@ Passwords are typically stored in a hashed format. Most systems use salts and it
 One solution is to move the hashed passwords to the new system and update the new system to support the legacy hashing algorithm. 
 
 
-| **Advantages**                                   | **Disadvantages**                                              |
-|--------------------------------------------------|----------------------------------------------------------------|
-| Avoids need for password reset.                 | Work to implement legacy hashing algorithm(s).                |
-| Transfers all accounts in a usable state.       | Liability associated with storing login credentials.          |
-|                                                  | Inherits any weakness associated with legacy hashing algorithms. |
+| **Advantages**                            | **Disadvantages**                                                |
+| ----------------------------------------- | ---------------------------------------------------------------- |
+| Avoids need for password reset.           | Work to implement legacy hashing algorithm(s).                   |
+| Transfers all accounts in a usable state. | Liability associated with storing login credentials.             |
+|                                           | Inherits any weakness associated with legacy hashing algorithms. |
 
 ##### Bulk Identity Migration
 
 If it's not possible to support the legacy hashed passwords, you can extract the user profile attributes and create new accounts in the new system.
 
-| **Advantages**                                               | **Disadvantages**                                                                                     |
-|--------------------------------------------------------------|-------------------------------------------------------------------------------------------------------|
-| Transfers all users at once.                                 | Transfers all accounts, even inactive accounts, unless they are filtered out during the transfer.     |
-| Enables immediate shutdown of legacy user repository.        | Requires all users to set new passwords via account recovery, unless the new system supports legacy hashed passwords. |
-| No latency added at login time to check a legacy system for a user account. | Migrating all users at once may cause an outage or delay the migration if things go wrong and there is no backup plan. |
-| Code to transfer identities can be independent of application code. | If multiple applications use the legacy repository, they must migrate at the same time if the legacy repository is to be shut off after migration. |
-|                                                              | Liability associated with storing login credentials.                                                  |
+| **Advantages**                                                              | **Disadvantages**                                                                                                                                  |
+| --------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Transfers all users at once.                                                | Transfers all accounts, even inactive accounts, unless they are filtered out during the transfer.                                                  |
+| Enables immediate shutdown of legacy user repository.                       | Requires all users to set new passwords via account recovery, unless the new system supports legacy hashed passwords.                              |
+| No latency added at login time to check a legacy system for a user account. | Migrating all users at once may cause an outage or delay the migration if things go wrong and there is no backup plan.                             |
+| Code to transfer identities can be independent of application code.         | If multiple applications use the legacy repository, they must migrate at the same time if the legacy repository is to be shut off after migration. |
+|                                                                             | Liability associated with storing login credentials.                                                                                               |
 
 ##### Gradual Migration of Users
 
 
-| **Advantages**                                                                 | **Disadvantages**                                                                                     |
-|-------------------------------------------------------------------------------|-------------------------------------------------------------------------------------------------------|
-| Inactive accounts can be weeded out.                                          | Requires that legacy identity store is accessible from new application’s authentication mechanism.    |
-| No password reset required (for users who log in during migration).           | Legacy identity store must remain accessible until enough identities are transferred.                 |
-| Spreads out risk of outages by migrating identities gradually (no big bang risk). | Transfer mechanism must be maintained throughout the gradual migration.                              |
+| **Advantages**                                                                                                                                 | **Disadvantages**                                                                                                         |
+| ---------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------- |
+| Inactive accounts can be weeded out.                                                                                                           | Requires that legacy identity store is accessible from new application’s authentication mechanism.                        |
+| No password reset required (for users who log in during migration).                                                                            | Legacy identity store must remain accessible until enough identities are transferred.                                     |
+| Spreads out risk of outages by migrating identities gradually (no big bang risk).                                                              | Transfer mechanism must be maintained throughout the gradual migration.                                                   |
 | Can support continued use of previous sign-up mechanisms or applications that use the legacy identity repository during the gradual migration. | A user’s first login after migration starts may have some latency as identity data is transferred from the legacy system. |
-|                                                                               | Potential for user confusion after password reset if other applications continue to use the legacy data store. |
-|                                                                               | Potential for user confusion if users can make user profile updates in both legacy and new systems after migration. |
-|                                                                               | Implementation work cannot be easily decoupled from the application team.                            |
-|                                                                               | Liability associated with storing login credentials.                                                 |
+|                                                                                                                                                | Potential for user confusion after password reset if other applications continue to use the legacy data store.            |
+|                                                                                                                                                | Potential for user confusion if users can make user profile updates in both legacy and new systems after migration.       |
+|                                                                                                                                                | Implementation work cannot be easily decoupled from the application team.                                                 |
+|                                                                                                                                                | Liability associated with storing login credentials.                                                                      |
 
 
 #### Administrative Account Creation
@@ -318,36 +319,36 @@ SCIM 2.0 is a RESTful API that uses JSON to represent user profile attributes an
 SCIM also provides an optional common user schema, though mapping profile attributes between systems is usually required.
 
 
-| **Advantages**                                                                 | **Disadvantages**                                                                                     |
-|-------------------------------------------------------------------------------|-------------------------------------------------------------------------------------------------------|
-| User doesn’t fill out registration form.                                      | Time-consuming if not automated.                                                                     |
-| Administrator can assign customized privileges for the account.               | Requires care to ensure that only the user knows the password for the account created.               |
-| Can incorporate manual identity validation step if required by the organization creating the account. | Liability associated with storing login credentials if stored locally.                               |
-| Can be automated via workflow or identity provisioning software.              |                                                                                                       |
+| **Advantages**                                                                                        | **Disadvantages**                                                                      |
+| ----------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------- |
+| User doesn’t fill out registration form.                                                              | Time-consuming if not automated.                                                       |
+| Administrator can assign customized privileges for the account.                                       | Requires care to ensure that only the user knows the password for the account created. |
+| Can incorporate manual identity validation step if required by the organization creating the account. | Liability associated with storing login credentials if stored locally.                 |
+| Can be automated via workflow or identity provisioning software.                                      |                                                                                        |
 #### Leveraging Existing Identity Service
 
 Popular with social providers. Involves less work for users.
 
 It is important to vet an external identity service before trusting it.
 
-| **Advantages**                                                                 | **Disadvantages**                                                                                     |
-|-------------------------------------------------------------------------------|-------------------------------------------------------------------------------------------------------|
-| Better user experience if it reduces the data required to sign up.            | You may have to collect additional profile information not available from the identity provider service. |
-| Easier for user to remember password if identity provider account is used frequently. | You need to evaluate the service and availability levels of the external identity service to ensure it meets your needs. |
-| You may not have to implement a login form or account recovery mechanism if all users authenticate via the identity provider service. | May require additional development or configuration work for each identity provider service to be used. |
-| Less risk if you do not store user passwords.                                 | May require configuration work at each identity provider service for each application you have, unless you use an authentication broker service. |
-|                                                                               | May require collaborative troubleshooting with another organization when issues occur.                 |
+| **Advantages**                                                                                                                        | **Disadvantages**                                                                                                                                |
+| ------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Better user experience if it reduces the data required to sign up.                                                                    | You may have to collect additional profile information not available from the identity provider service.                                         |
+| Easier for user to remember password if identity provider account is used frequently.                                                 | You need to evaluate the service and availability levels of the external identity service to ensure it meets your needs.                         |
+| You may not have to implement a login form or account recovery mechanism if all users authenticate via the identity provider service. | May require additional development or configuration work for each identity provider service to be used.                                          |
+| Less risk if you do not store user passwords.                                                                                         | May require configuration work at each identity provider service for each application you have, unless you use an authentication broker service. |
+|                                                                                                                                       | May require collaborative troubleshooting with another organization when issues occur.                                                           |
 
 ### Selecting an Identity Service
 
 Characteristics of strong vs weak identities:
 
-| **Strong Identities**                                                         | **Weak Identities**                                                             |
-|-------------------------------------------------------------------------------|---------------------------------------------------------------------------------|
-| Linked to a real person, who can be held accountable for actions taken with the identity and associated accounts. | Anonymous, cannot be linked to a real person.                                   |
-| Identity attributes are validated during account issuance process.            | Little validation of identity attributes.                                       |
-| Issued by entity recognized as authoritative for a particular context.        | Issued by an entity with little recognized authority.                           |
-| Contains mechanisms to protect against forgery or unauthorized use.           | Few protections against forgery or unauthorized use.                            |
+| **Strong Identities**                                                                                             | **Weak Identities**                                   |
+| ----------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------- |
+| Linked to a real person, who can be held accountable for actions taken with the identity and associated accounts. | Anonymous, cannot be linked to a real person.         |
+| Identity attributes are validated during account issuance process.                                                | Little validation of identity attributes.             |
+| Issued by entity recognized as authoritative for a particular context.                                            | Issued by an entity with little recognized authority. |
+| Contains mechanisms to protect against forgery or unauthorized use.                                               | Few protections against forgery or unauthorized use.  |
 
 #### Self-Registered Identities
 
@@ -369,10 +370,10 @@ There are many vendors that offer cloud-based identity services, such as Google 
 
 Identity provider scenarios:
 
-| **Scenario**               | **Common Type(s) of Identity Provider**                                                                 |
-|-----------------------------|-------------------------------------------------------------------------------------------------------|
-| **B2C: Business to consumer** | Social Identity Providers<br>Identity services such as Azure AD or Auth0<br>Application-specific repository |
-| **B2E: Business to employee** | Identity services such as Google Apps, Azure AD, Auth0<br>Any OIDC or SAML 2–compliant identity provider |
+| **Scenario**                  | **Common Type(s) of Identity Provider**                                                                                             |
+| ----------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
+| **B2C: Business to consumer** | Social Identity Providers<br>Identity services such as Azure AD or Auth0<br>Application-specific repository                         |
+| **B2E: Business to employee** | Identity services such as Google Apps, Azure AD, Auth0<br>Any OIDC or SAML 2–compliant identity provider                            |
 | **B2B: Business to business** | Identity services such as Google Apps, Azure AD, Auth0<br>Any OIDC or SAML 2–compliant provider controlled by the business customer |
 
 ### Identity Proofing
@@ -386,11 +387,11 @@ Providers, such as ID.me, Sumsub, Socure, and Trulioo, are examples of venddors 
 Advantages and disadvantages of account identifiers
 
 
-| **Advantages**                                                                 | **Disadvantages**                                                                                     |
-|-------------------------------------------------------------------------------|-------------------------------------------------------------------------------------------------------|
-| **Email:** Globally unique.<br>No need to hunt for a name that isn’t taken already.<br>May be easier to remember than a username.<br>Can double as a communication attribute, such as for password resets. | **Email:** May need to be changed by a user.<br>May be reassigned by an email provider to a new user.<br>May be reassigned by a corporate provider to a new user.<br>Terminated by the employer if a user leaves.<br>Not all companies issue email addresses.<br>Children may not have email addresses.<br>Family members may share an email address.<br>May expose personal information (user's name).<br>Exposure as display name may result in spam email. |
-| **Username:** Easier to set up multiple accounts at a site.<br>May be shorter to type on mobile devices.<br>Can be used in searches, allowing other attributes with personal data to be encrypted. | **Username:** Only unique within an application domain.<br>Merging user repositories problematic after acquisitions.<br>May be harder for a user to remember which username was used at each site.<br>A user may want to change a username over time.<br>May expose personal information if used for display and it contains personal information. |
-| **Phone number:** Globally unique (with country code).<br>No need to hunt for a free identifier.<br>Can double as a communication attribute, such as for password resets.<br>May be easier for a user to remember than a username. | **Phone number:** Exposure as display name may cause spam calls.<br>Might be reassigned to a new user over time.<br>May involve a charge to obtain a phone number.<br>More difficult for a person to set up multiple accounts at the same site.<br>May be changed by a user for various reasons.<br>May be terminated by a phone provider. |
+| **Advantages**                                                                                                                                                                                                                     | **Disadvantages**                                                                                                                                                                                                                                                                                                                                                                                                                                             |
+| ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Email:** Globally unique.<br>No need to hunt for a name that isn’t taken already.<br>May be easier to remember than a username.<br>Can double as a communication attribute, such as for password resets.                         | **Email:** May need to be changed by a user.<br>May be reassigned by an email provider to a new user.<br>May be reassigned by a corporate provider to a new user.<br>Terminated by the employer if a user leaves.<br>Not all companies issue email addresses.<br>Children may not have email addresses.<br>Family members may share an email address.<br>May expose personal information (user's name).<br>Exposure as display name may result in spam email. |
+| **Username:** Easier to set up multiple accounts at a site.<br>May be shorter to type on mobile devices.<br>Can be used in searches, allowing other attributes with personal data to be encrypted.                                 | **Username:** Only unique within an application domain.<br>Merging user repositories problematic after acquisitions.<br>May be harder for a user to remember which username was used at each site.<br>A user may want to change a username over time.<br>May expose personal information if used for display and it contains personal information.                                                                                                            |
+| **Phone number:** Globally unique (with country code).<br>No need to hunt for a free identifier.<br>Can double as a communication attribute, such as for password resets.<br>May be easier for a user to remember than a username. | **Phone number:** Exposure as display name may cause spam calls.<br>Might be reassigned to a new user over time.<br>May involve a charge to obtain a phone number.<br>More difficult for a person to set up multiple accounts at the same site.<br>May be changed by a user for various reasons.<br>May be terminated by a phone provider.                                                                                                                    |
 
 ## 5. OAuth 2 and API Authorization
 
@@ -470,9 +471,16 @@ There were two additional grant types that were removed in OAuth 2.1:
 An additional grant type has been designed for devices which have limited capabilities for user interaction, i.e. scenarios for IoT; however, this grant type has not made it into the specification yet:
 - Client device
 
+Screenshot from Postman showing OAuth 2.0 authorization grants:
+
+<img src='images/1754819343207.png' width=350 />
+
+
 #### Authorization Code Grant
 
 The authorization code grant uses two requests from the application to the authorization server to obtain an access token.
+
+The reason for using two separate requests is so the access token is never exposed in the browser or front-channel, reducing the risk of interception. By exchanging a short-lived code for the token over a secure back-channel, the server can authenticate the client and validate the request before issuing the token.
 
 First, the user's browser is redirected to the authorization server’s endpoint to approve an API call on their behalf. This redirect lets the server authenticate the user and get their consent. Once consent is given, the server sends the browser back to the application with an **authorization code**.
 
@@ -487,3 +495,142 @@ It also means the response with the access token can be delivered to the applica
 A side benefit is that tokens are returned via secure back-channel response. However, while originally optimized for confidential clients, the addition of PKCE enables other client types to use this grant type as well.
 
 ##### Authorization Code Grant Type + PKCE
+
+PKCE (Proof Key for Code Exchange), pronounced "pixie", is an extension to the authorization code grant type that enables public clients to use it securely.
+
+PKCE does not authenticate clients; rather, it ensures the application that requested an authorization code is the same application that uses the authorization code to obtain an access token.
+
+PKCE was defined after OAuth 2.0 was published, so it is not part of the original OAuth 2.0 specification. It was added to the OAuth 2.1 specification.
+
+
+###### How PKCE Works
+
+With PKCE, the app first generates a cryptographically random string called the **code verifier**. This string is long enough to make guessing impractical.
+
+The app then creates a **code challenge** from the verifier, usually by hashing it. The challenge should be one-way, so the verifier can’t be recovered quickly enough to compromise security.
+
+When sending the authorization request (step 2 in the diagram above), the app includes both the code challenge and the method used to generate it.
+
+In step 6, when the app sends the authorization code to the token endpoint, it also sends the code verifier.
+
+The authorization server applies the same transformation method specified in the original authorization request and compares the result to the code challenge from step 2.
+
+This check ensures that only the app with the correct code verifier can use the authorization code, blocking malicious apps from using a stolen code.
+
+###### Code Challenge Methods 
+The PKCE spec defines two ways to create a code challenge from a code verifier: “plain” and “S256.”
+
+With “plain,” the challenge is the same as the verifier, offering no extra protection if the challenge is exposed.
+
+“S256” is preferred—it creates a base64 URL-encoded SHA256 hash of the verifier, making it much harder to reverse.
+
+###### The Authorization Request
+
+Here is an example of an authorization request using the authorization code grant type with PKCE:
+
+```
+GET /authorize?
+response_type=code 
+& client_id=<client_id> 
+& state=<state> 
+& scope=<scope> 
+& redirect_uri=<callback uri> 
+& resource=<API identifier> 
+& code_challenge=<PKCE code_challenge>            # Sends the code challenge (and method) in the first request
+& code_challenge_method=S256 HTTP/1.1 
+Host: authorizationserver.com
+```
+
+| **Parameter**               | **Meaning**                                                                                                                                                              |
+| --------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **response\_type**          | OAuth 2 grant type. Use “code” for authorization code grants.                                                                                                            |
+| **client\_id**              | App ID assigned by the authorization server during registration.                                                                                                         |
+| **state**                   | Unique, hard-to-guess value to link requests and responses, helping prevent CSRF. Ties the request to the user’s session. Must not contain sensitive data in plain text. |
+| **scope**                   | Requested access permissions, e.g., “get\:documents.” Must not contain sensitive data in plain text.                                                                     |
+| **redirect\_uri**           | Callback URL for the authorization server’s response. Must exactly match the registered URI (except port numbers for localhost in native apps).                          |
+| **resource**                | API identifier for the requested access token. Needed only if multiple APIs are possible. Sometimes called “audience.”                                                   |
+| **code\_challenge**         | PKCE code challenge derived from the code verifier using the method in code\_challenge\_method.                                                                          |
+| **code\_challenge\_method** | “S256” or “plain.” Use “S256” when possible.                                                                                                                             |
+
+###### Response to Authorization Request
+
+The authorization server responds with a redirect to the application’s callback URL, including the authorization code and state:
+
+```
+HTTP/1.1 302 Found 
+Location: https://clientapplication.com/callback? 
+code=<authorization code> 
+& state=<state>
+```
+| **Parameter** | **Meaning**                                                                                                         |
+| ------------- | ------------------------------------------------------------------------------------------------------------------- |
+| **code**      | Authorization code used by the app to request an access token.                                                      |
+| **state**     | Unchanged value from the authorization request. Must match the value sent with the initial request to prevent CSRF. |
+
+###### Calling the Token Endpoint
+
+After receiving the authorization code, the application uses it in a second request to the authorization server’s token endpoint to obtain an access token.
+
+```
+POST /token HTTP/1.1
+Host: authorizationserver.com
+Authorization: Basic <encoded application credentials> 
+
+Content-Type: application/x-www-form-urlencoded 
+grant_type=authorization_code 
+& code=<authorization_code> 
+& client_id=<client id>
+& code_verifier=<code verifier>             # Sends the code verifier to prove it is the same application that requested the authorization code   
+& redirect_uri=<callback URI>
+```
+| **Parameter**      | **Meaning**                                                                                                                                                         |
+| ------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **grant\_type**    | Must be “authorization\_code” for the authorization code grant.                                                                                                     |
+| **code**           | Authorization code returned from the authorization call.                                                                                                            |
+| **client\_id**     | App ID assigned during registration with the authorization server.                                                                                                  |
+| **code\_verifier** | PKCE code verifier used to create the code challenge. Must be a cryptographically random string of 43–128 allowed characters (A–Z, a–z, 0–9, "-", ".", "\_", "\~"). |
+| **redirect\_uri**  | Callback URI for the authorization server’s response. Must match the one used in the authorization request.                                                         |
+
+
+###### Response to Token Request
+
+The authorization server responds with an access token, and optionally a refresh token, in JSON format:
+
+```
+HTTP/1.1 200 OK 
+Content-Type: application/json;charset=UTF-8 
+Cache-Control: no-store 
+Pragma: no-cache 
+  { 
+    "access_token":"<access_token_for_API>", 
+    "token_type":"Bearer", 
+    "expires_in":<token expiration>, 
+    "refresh_token":"<refresh_token>" 
+  }
+```
+| **Parameter**      | **Meaning**                                                                                     |
+| ------------------ | ----------------------------------------------------------------------------------------------- |
+| **access\_token**  | Token used to call the API. Format varies by authorization server.                              |
+| **token\_type**    | Type of token issued, e.g., “Bearer.”                                                           |
+| **expires\_in**    | Token lifetime in seconds.                                                                      |
+| **refresh\_token** | Optional token to obtain a new access token. Returned at the authorization server’s discretion. |
+
+Access tokens come in different types. Some authorization servers issue opaque tokens—encoded strings with no visible data. When a resource server receives an opaque token, it can use the token introspection endpoint of the authorization server to get details. This includes the client that requested it, the intended audience, expiration time, revocation status, and authorized scopes. The OAuth 2.0 Token Introspection specification defines this process.
+
+Another common type is the JSON Web Token (JWT). This is a structured, cryptographically signed token that contains claims, such as the requesting client, intended audience, expiration, and scopes. Since JWTs are self-contained, a resource server can read the claims directly without contacting the authorization server. The JWT Profile for OAuth 2.0 Access Tokens defines the required and optional claims for this format.
+
+Authorization server documentation should specify which token type it issues and how a resource server should validate and read the claims.
+
+#### Client Credentials Grant
+
+The client credentials grant type is used when an application calls an API to access resources the application owns, rather than resources owned by a user. It does not involve user interaction or consent.
+
+The use of this grant type requires the application have the ability to maintain confidential secrets (or use another secure mechanism) to authenticate itself to the authorization server.
+
+<img src='images/1754821355572.png' width=800 />
+
+The application sends its **client credentials** to the authorization server’s `/token` endpoint, which validates them and returns an **access token**.
+
+The application then uses the token to call the resource server’s API endpoint.
+
+When the token expires, the application repeats the process to obtain a new one before making further API calls.
