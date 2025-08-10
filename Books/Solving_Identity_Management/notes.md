@@ -57,6 +57,14 @@
     - [Authorization Code Grant](#authorization-code-grant)
       - [Authorization Code Grant Type + PKCE](#authorization-code-grant-type--pkce)
     - [Client Credentials Grant](#client-credentials-grant)
+      - [The Authorization Request](#the-authorization-request-1)
+    - [Implicit Grant (Removed in OAuth 2.1)](#implicit-grant-removed-in-oauth-21)
+      - [Implicit Grant Type Risks](#implicit-grant-type-risks)
+    - [Resource Owner Password Credentials Grant (Removed in OAuth 2.1)](#resource-owner-password-credentials-grant-removed-in-oauth-21)
+      - [Resource Owner Password Credentials Grant Type Risks](#resource-owner-password-credentials-grant-type-risks)
+    - [Device Authorization Grant](#device-authorization-grant)
+      - [Device Authorization Grant Requirements](#device-authorization-grant-requirements)
+      - [The Authorization Request](#the-authorization-request-2)
 
 
 ## 1. The Hydra of Modern Identity
@@ -634,3 +642,122 @@ The application sends its **client credentials** to the authorization server’s
 The application then uses the token to call the resource server’s API endpoint.
 
 When the token expires, the application repeats the process to obtain a new one before making further API calls.
+
+##### The Authorization Request
+
+A sample token request for the client credentials grant type is shown below. The parameters are the same as in the previous grant type, except `grant_type` is set to `client_credentials`. In this example, the application authenticates using a client ID and secret registered with the authorization server—one of several possible authentication methods.
+
+```
+POST /token 
+HTTP/1.1 Host: authorizationserver.com 
+Authorization: Basic <encoded application credentials> 
+Content-Type: application/x-www-form-urlencoded 
+grant_type=client_credentials 
+& scope=<scope> 
+& resource=<API identifier>
+```
+A successful client credentials grant request returns an access token from the token endpoint, similar to the authorization code grant example in the previous section.
+
+#### Implicit Grant (Removed in OAuth 2.1)
+
+OAuth 2.0 introduced the implicit grant type, designed for public clients like single-page applications. 
+
+It’s called **Implicit** because the access token is issued *implicitly* as part of the authorization response, without the explicit, separate step of exchanging an authorization code for a token.
+
+In other words, instead of the application explicitly requesting a token in a second back-channel request (as in the Authorization Code flow), the token is delivered directly in the redirect response — which is faster, but less secure since it exposes the token to the browser and potentially to malicious scripts.
+
+It delivered the access token to the application in a single step. Since CORS (Cross-Origin Resource Sharing) was not widely supported at the time, web pages were restricted to making requests only to their own domain and couldn’t call an authorization server’s token endpoint directly. To bypass this limitation, the authorization server included the token in the URL hash fragment of a redirect back to the application.
+
+<img src='images/1754821753751.png' width=800 />
+
+In the OAuth 2.0 Implicit Grant flow, the browser is redirected to the authorization server’s `/authorize` endpoint, where the user logs in and grants access. 
+
+The authorization server responds by immediately returning an access token in the URL fragment, skipping the separate code exchange step used in the authorization code grant type.
+
+The browser passes the token to the application via its callback URL. 
+
+The application can then use this access token to call the resource server on behalf of the user. This flow was removed in OAuth 2.1 due to security concerns.
+
+##### Implicit Grant Type Risks
+
+Since the original OAuth 2.0 spec, most browsers have added CORS support. This makes the implicit grant type unnecessary for its original purpose. Returning an access token in a URL hash fragment also risks exposing it through browser history or referer headers. Because of this, OAuth 2.1 removes the implicit grant type. Use the authorization code grant with PKCE instead.
+
+New applications should not use the implicit grant type. Some authorization servers may keep supporting it for a while, but due to its security risks, existing applications should switch to the authorization code grant with PKCE. This reduces the chance of token leaks, prevents a rushed upgrade if support ends suddenly, and stays aligned with OAuth 2.1.
+
+#### Resource Owner Password Credentials Grant (Removed in OAuth 2.1)
+
+In the OAuth 2.0 resource owner password credentials grant type, the application directly collected the user’s credentials instead of redirecting them to the authorization server. 
+
+It then sent those credentials to the server for validation as part of the access token request. This method was meant for cases where the application was trusted to handle user credentials and no other grant type was feasible.
+
+<img src='images/1754822234987.png' width=800 />
+
+In the Resource Owner Password Credentials (ROPC) grant flow, the user provides their username and password directly to the application. 
+
+The application sends these credentials to the authorization server’s `/token` endpoint to request an access token. 
+
+The authorization server validates the credentials and responds with an access token (and optionally a refresh token). 
+
+The application then uses the access token to access the resource server on behalf of the user. 
+
+This flow was removed in OAuth 2.1 due to the high security risk of exposing user credentials to the application.
+
+
+##### Resource Owner Password Credentials Grant Type Risks
+
+The resource owner password credentials grant was discouraged for several reasons.
+
+It exposed user credentials directly to the application. If the application was compromised, those credentials could be stolen. It also lacked a standard way to support multi-factor authentication, so apps often implemented it in custom ways that might not have been properly reviewed for security. In addition, there was no user consent step, meaning the app could request any access it wanted with the user’s credentials, leaving the user powerless to prevent abuse.
+
+This grant type was used in mobile apps, embedded login pages, and user migration scenarios. Early mobile apps used it to call first-party APIs because browser-based redirects were considered inconvenient at the time. This has since improved, and OAuth 2.1 now recommends the authorization code grant with PKCE for native apps, following RFC 8252. Embedded login fields inside app pages were also common to match corporate UI standards or avoid browser redirects.
+
+In user migration, it allowed credentials from an old system to be validated and transferred to a new one without forcing password resets. However, if the old system’s passwords were compromised, those vulnerabilities could carry over unless additional checks were applied.
+
+Security guidance advised discarding credentials immediately after exchanging them for an access token, but this only addressed part of the risk. Because significant risks remain, OAuth 2.1 has removed support for this grant type.
+
+New applications should use the authorization code grant with PKCE instead. Existing apps should migrate as soon as possible to avoid security issues and prepare for the possibility that authorization servers will stop supporting this method. Legacy apps that cannot upgrade will retain full responsibility for ensuring security and may face a forced migration if their identity provider ends support.
+
+#### Device Authorization Grant
+
+Since OAuth 2 was introduced, Internet-connected devices—often called the Internet of Things (IoT)—have become common. Like applications, IoT devices can use APIs to expand their capabilities.
+
+For example, instead of manually uploading photos to a digital picture frame, you could let it automatically pull images from a social media account. To do this, you would authenticate with the social media site and give the frame permission to access your photos.
+
+The OAuth 2 authorization code grant requires user interaction on the client device, but many IoT devices have limited input and display options. While it’s possible to add features like a touchscreen and browser to handle the process, that would increase cost and complexity, which may not be practical.
+
+The OAuth 2.0 Device Authorization Grant solves this by letting the required user interaction happen on another device. The IoT device triggers an API request, such as retrieving photos or turning on a TV. It sends an authorization request to the authorization server, which returns a URL and code. These are shown to the user on the IoT device.
+
+The user then goes to the URL on a secondary device, like a phone, enters the code, signs in, and grants permission. Meanwhile, the IoT device polls the authorization server. Once the user finishes, the next polling attempt returns an access token (and possibly a refresh token). The IoT device can then use the token to make API calls on the user’s behalf.
+
+<img src='images/1754822751665.png ' width=800 />
+
+In the Device Authorization Grant flow, the primary client device requests a device and user code from the authorization server using its client ID. 
+
+The device displays the verification URI and user code to the user, who enters them on a secondary device with a browser. 
+
+The secondary device authenticates the user and grants authorization. 
+
+The primary device polls the authorization server until the user completes verification, at which point it receives an access token (and optionally a refresh token). 
+
+The device can then use the access token to call the resource server’s API.
+
+##### Device Authorization Grant Requirements
+
+For the Device Authorization Grant to work, several conditions must be met.
+
+The primary device must be online and able to send outbound HTTPS requests to the authorization server for the target API. It must also be able to show or communicate the user verification URI, an end-user code, and instructions.
+
+Additionally, the user needs a secondary device that can handle the interaction required to authenticate and authorize the API requests.
+
+##### The Authorization Request
+
+An example of a primary device’s authorization request is shown here. It would be directed via HTTP-POST to an authorization server’s device_authorization endpoint.
+
+```
+POST /device_authorization HTTP/1.1 
+Host: authorizationserver.com 
+Content-Type: application/x-www-form-urlencoded 
+client_id=<client id>
+& resource=<API identifier> 
+& scope=<scope>
+```
