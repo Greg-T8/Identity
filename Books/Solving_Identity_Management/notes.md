@@ -78,6 +78,19 @@
     - [Confidentiality and Integrity](#confidentiality-and-integrity)
     - [Token Revocation](#token-revocation)
 - [6. OpenID Connect](#6-openid-connect)
+  - [Problem to Solve](#problem-to-solve)
+  - [Terminology](#terminology-1)
+    - [Roles](#roles-1)
+    - [Client Types](#client-types)
+    - [Tokens and Authoriztion Code](#tokens-and-authoriztion-code)
+    - [Endpoints](#endpoints)
+    - [ID Token](#id-token)
+  - [How OIDC Works](#how-oidc-works)
+    - [OIDC Flows](#oidc-flows)
+    - [OIDC Authorization Code Flow](#oidc-authorization-code-flow)
+      - [Authentication Request](#authentication-request)
+      - [Authentication Response](#authentication-response)
+      - [Token Request](#token-request)
 
 
 ## 1. The Hydra of Modern Identity
@@ -937,3 +950,195 @@ Applications should revoke refresh and access tokens when they’re no longer ne
 
 
 ## 6. OpenID Connect
+
+OAuth 2 is a framework for authorizing applications to access APIs, but it doesn’t handle user authentication. OpenID Connect (OIDC) builds on OAuth 2 by adding an identity layer. This allows authorization servers to authenticate users and return the results in a standardized format. 
+
+While some OAuth 2 implementations created their own custom methods for this, a universal standard was needed. This chapter explains the problem OIDC addresses and how applications can use it to authenticate users.
+
+### Problem to Solve
+
+OIDC addresses situations where a user must be authenticated to access an application. It lets the application delegate authentication to an OAuth 2 authorization server. The server then returns standardized claims about the user and the authentication event. 
+
+<img src='images/1754904926658.png' width=800 />
+
+When a user opens an application, the app redirects their browser (or a similar agent for mobile apps) to an OIDC-enabled authorization server, called an OpenID Provider. The OpenID Provider handles the authentication process, unless the user is already logged in.
+
+After authentication, the browser is redirected back to the application. The app can then request user claims in an ID Token or request an OAuth 2 access token to call the OpenID Provider’s UserInfo endpoint for those claims.
+
+Since OIDC is built on top of OAuth 2, the same OpenID Provider can handle both authentication and API authorization. This is a simplified overview—later sections introduce more terms and provide a more precise explanation.
+
+### Terminology
+
+#### Roles
+OIDC defines three main roles:
+
+* **End User** – The person who needs to be authenticated. We’ll simply call them the “user.”
+* **OpenID Provider (OP)** – An OAuth 2 authorization server that supports OIDC. It authenticates the user and returns claims about the user and the authentication event to the relying party.
+* **Relying Party (RP)** – An OAuth 2 client that delegates authentication to an OpenID Provider and requests user claims. In most cases, this is the application, though in advanced cases it could be another identity provider.
+
+#### Client Types
+OIDC recognizes the same application types as OAuth 2: public and confidential, plus **native applications**—apps installed and run directly on a user’s device, as defined in the “OAuth 2.0 for Native Apps” best practices.
+
+#### Tokens and Authoriztion Code
+It uses OAuth 2’s **authorization code**, **access token**, and **refresh token**, and adds a new one:
+
+* **ID Token** – Carries claims about the authentication event and the authenticated user, sent to the relying party (application).
+
+#### Endpoints
+OIDC also uses OAuth 2’s **authorization** and **token** endpoints, and adds the:
+
+* **UserInfo Endpoint** – Returns claims about the authenticated user. It requires an access token, and the claims returned depend on that token’s scope.
+
+#### ID Token
+
+An **ID Token** is a security token from an OpenID Provider that carries claims about an authentication event and the authenticated user. It’s formatted as a **JSON Web Token (JWT)**.
+
+<img src='images/1754905357418.png' width=650 />
+
+A JWT has three parts:
+
+* **Header** – States the token type (JWT) and the signature algorithm used, such as HS256 (HMAC with SHA256) or RS256 (RSA with SHA256).
+* **Payload** – Contains the claims about the user and the authentication event.
+* **Signature** – A digital signature of the payload, created by the OpenID Provider using a secret key. This follows the **JSON Web Signature (JWS)** specification.
+
+Applications (relying parties) can verify the signature to ensure the claims haven’t been altered. For extra confidentiality, the OpenID Provider can encrypt the signed JWT using **JSON Web Encryption (JWE)**, creating a *nested JWT*.
+
+The payload’s name\:value pairs are the actual claims. OIDC Section 2 defines a standard set of claims included in ID Tokens for all authentication requests:
+
+| Claim      | Meaning                                                                                                                   |
+| ---------- | ------------------------------------------------------------------------------------------------------------------------- |
+| iss        | Issuer of the ID Token in URL format, usually the OpenID Provider (no query or fragment in URL).                          |
+| sub        | Unique, case-sensitive ID for the authenticated user within the OpenID Provider (max 255 ASCII characters, never reused). |
+| aud        | Client ID of the intended application; may be one or multiple audiences.                                                  |
+| exp        | Expiration time in seconds since Jan 1, 1970 (UTC). Token is invalid after this time.                                     |
+| iat        | Time the ID Token was issued, in seconds since Jan 1, 1970 (UTC).                                                         |
+| auth\_time | Time the user was authenticated, in seconds since Jan 1, 1970 (UTC).                                                      |
+| nonce      | Unique, case-sensitive string from the authentication request to prevent token replay attacks.                            |
+| amr        | Method(s) used to authenticate the user.                                                                                  |
+| acr        | Authentication context class used; can follow agreed standards or provider-specific values.                               |
+| azp        | Client ID of the authorized party for the ID Token; used when different from the audience.                                |
+
+### How OIDC Works
+
+OIDC defines three different flows by which an application can interact with an OpenID Provider to make an authentication request.
+
+#### OIDC Flows
+
+OIDC flows are tailored to different application types and are similar to OAuth 2 grant types. The core specification defines three main flows:
+
+* Authorization Code Flow
+* Implicit Flow
+* Hybrid Flow
+
+#### OIDC Authorization Code Flow
+
+The **OIDC Authorization Code Flow** works much like the OAuth 2 authorization code grant, using two requests and an intermediate authorization code.
+
+The process:
+
+1. User opens the application (relying party).
+2. The browser is redirected to the OpenID Provider with an authentication request.
+3. The OpenID Provider prompts the user to authenticate and consent to the requested scopes.
+4. After login and consent, the OpenID Provider starts or updates the user’s authentication session.
+5. The browser is redirected back to the application with an authorization code.
+6. The application sends this code to the OpenID Provider’s token endpoint.
+7. The OpenID Provider returns an ID Token, access token, and optionally a refresh token.
+8. The application can use the access token to call the UserInfo endpoint for user claims.
+
+If the application can authenticate itself, it does so when requesting tokens. Public clients that can’t store a secret securely use **PKCE** to protect against authorization code interception.
+
+<img src='images/1754905755737.png' width=800 />
+
+##### Authentication Request
+
+The application starts authentication by redirecting the user’s browser to the OpenID Provider’s authorization endpoint, for example:
+
+```
+GET /authorize?
+  response_type=code
+  & client_id=<client_id>
+  & state=<state_value>
+  & nonce=<nonce_value>
+  & scope=<scope>
+  & redirect_uri=<callback_url>
+  & code_challenge=<code_challenge>
+  & code_challenge_method=<code_challenge_method>
+HTTP/1.1
+Host: authorizationserver.com
+```
+This request includes parameters for the authorization code flow with PKCE.
+
+| Parameter               | Meaning                                                                        |
+| ----------------------- | ------------------------------------------------------------------------------ |
+| response\_type          | OIDC flow to use. `"code"` = Authorization Code Flow.                          |
+| response\_mode          | Optional. Chooses how the server returns response parameters.                  |
+| client\_id              | Application’s client ID from registration with the OpenID Provider.            |
+| state                   | Unique value to match request and response; prevents CSRF and token injection. |
+| nonce                   | Unique value to prevent token replay; returned in ID Token if requested.       |
+| scope                   | Claims to request, e.g., `openid profile email`.                               |
+| redirect\_uri           | URL where the provider sends the response after authentication.                |
+| code\_challenge         | PKCE value from the code verifier using the specified method.                  |
+| code\_challenge\_method | `"S256"` (SHA256) or `"plain"`; use S256 if supported.                         |
+
+In OIDC, **response\_type** specifies the flow. For the Authorization Code Flow, use `"code"`, which returns an authorization code to the application. The optional **response\_mode** controls how the response is sent:
+
+* **query** – Parameters in the query string (default for `"code"`).
+* **fragment** – Parameters in the URI fragment (default for `"token"`).
+
+**scope** in OIDC requests identifies the use of OIDC and the claims to request about the user. The `"openid"` value is mandatory.
+
+* `"openid profile email"` requests default profile claims (name, family name, given name) and email details.
+* If an access token is issued, scope affects claims returned from the UserInfo endpoint.
+* Without an access token, the claims are in the ID Token.
+
+**nonce** is strongly recommended when requesting an ID Token. It should be unique, random, and linked to the user’s session. A common method is to store the raw value in the session, use its hash as the nonce, and verify it matches when the ID Token is returned. This prevents replay attacks.
+
+Other optional parameters can control prompts for login/consent, set language preferences, give hints about the user, or request specific claims (see OIDC Core §3.1.2.1).
+
+##### Authentication Response
+
+In the Authorization Code Flow, the OpenID Provider sends the user back to the registered **redirect URI** with the authorization code and the original state value:
+
+```
+HTTP/1.1 302 Found
+Location: https://clientapplication.com/callback?
+  code=<authorization_code>
+  & state=<state_value>
+```
+
+The application must:
+
+* Check for any error codes.
+* Verify the returned `state` matches the one sent in the request.
+* Use the authorization code to request tokens.
+
+Each authorization code can only be used once—reusing it will cause the server to return an error.
+
+##### Token Request
+
+The application exchanges the authorization code for tokens by sending a request to the OpenID Provider’s **token endpoint**.
+
+Example for a confidential client using a client secret and HTTP Basic authentication:
+
+```
+POST /token HTTP/1.1
+Host: authorizationserver.com
+Content-Type: application/x-www-form-urlencoded
+Authorization: Basic <encoded client credentials>
+
+grant_type=authorization_code
+& code=<authorization_code>
+& redirect_uri=<redirect_uri>
+& code_verifier=<code_verifier>
+```
+
+The client authentication method (e.g., Basic auth, private key JWT) is determined during application registration with the OpenID Provider. Section 9 of the OIDC Core spec lists the available methods.
+
+Here’s the simplified table:
+
+| Parameter      | Meaning                                                                                                  |
+| -------------- | -------------------------------------------------------------------------------------------------------- |
+| grant\_type    | `"authorization_code"` when exchanging an authorization code for tokens.                                 |
+| code           | Authorization code received from the authentication request.                                             |
+| redirect\_uri  | Application’s callback URL for the OpenID Provider’s response.                                           |
+| code\_verifier | PKCE value used to create the code challenge; a random 43–128 character string using allowed characters. |
