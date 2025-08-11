@@ -65,6 +65,9 @@
     - [Device Authorization Grant](#device-authorization-grant)
       - [Device Authorization Grant Requirements](#device-authorization-grant-requirements)
       - [The Authorization Request](#the-authorization-request-2)
+      - [Authorization Response](#authorization-response)
+      - [Polling the Authorization Server](#polling-the-authorization-server)
+    - [Calling an API](#calling-an-api)
 
 
 ## 1. The Hydra of Modern Identity
@@ -761,3 +764,86 @@ client_id=<client id>
 & resource=<API identifier> 
 & scope=<scope>
 ```
+| **Parameter** | **Meaning**                                                                             |
+| ------------- | --------------------------------------------------------------------------------------- |
+| client\_id    | ID for the primary device, assigned during registration with the authorization server.  |
+| scope         | Access privileges requested (e.g., “get\:photos”).                                      |
+| resource      | ID for a specific API; sometimes called “audience.” Needed only if multiple APIs exist. |
+
+##### Authorization Response
+
+The authorization server replies to the primary device’s request with a device code, a user code, a verification URI, an expiration time, and a polling interval. Below is an example HTTP response containing these parameters.
+
+```
+HTTP/1.1 200 OK
+Content-Type: application/json;charset=UTF-8
+Cache-Control: no-store
+Pragma: no-cache
+
+{
+  "device_code": "<code issued for device>",
+  "user_code": "<code issued for end user>",
+  "verification_uri": "https://authorizationserver.com/device",
+  "expires_in": 600,
+  "interval": 5
+}
+```
+| Parameter         | Meaning                                                                |
+| ----------------- | ---------------------------------------------------------------------- |
+| device\_code      | Code for the primary device, used to request a token.                  |
+| user\_code        | Code for the user to authorize the primary device from another device. |
+| verification\_uri | URL the user visits from another device to approve the request.        |
+| expires\_in       | Time in seconds before the codes expire.                               |
+| interval          | Minimum wait time in seconds between polling requests.                 |
+
+The primary device gets an authorization response containing a verification URI, device code, and user code. It shares the URI and user code with the user in a format suited to the device, such as a text link or QR code. The user is instructed to open the URI on a secondary device (e.g., smartphone) and enter the user code. The secondary device must have a browser or similar tool that supports redirects to the authorization server and allows authentication and consent.
+
+When the user visits the URI, the authorization server asks them to log in, enter the user code, and approve the request. The exact steps may differ depending on the server. While this happens, the primary device regularly polls the authorization server for updates.
+
+##### Polling the Authorization Server
+
+The primary device polls the authorization server by repeatedly sending an access token request to its token endpoint. The authentication method for these requests can vary based on the server and the settings used when the device was registered. Polling frequency should follow the “interval” value provided by the server.
+
+Example token request:
+
+```
+POST /token HTTP/1.1
+Host: authorizationserver.com
+Content-Type: application/x-www-form-urlencoded
+
+grant_type=urn:ietf:params:oauth:grant-type:device_code
+& device_code=<device code>
+& client_id=<client id>
+```
+| Parameter    | Meaning                                                                |
+| ------------ | ---------------------------------------------------------------------- |
+| grant\_type  | Type of grant. Must be `urn:ietf:params:oauth:grant-type:device_code`. |
+| device\_code | Code issued to the primary device for token requests.                  |
+| client\_id   | ID assigned to the primary device during registration.                 |
+
+The authorization server uses the client ID and device code to link a polling request to the original authorization request. The primary device should poll no more often than the interval value from the server’s response.
+
+Polling continues while the user interacts with the authorization server. Possible responses include:
+
+* **authorization\_pending** – User has not finished authorization.
+* **slow\_down** – Reduce polling frequency.
+* **access\_denied** – User rejected the request.
+* **expired\_token** – Device code expired.
+
+These are in addition to standard OAuth 2 error codes for issues like invalid requests or unauthorized access.
+
+Once the user authorizes the request, the next poll will return an access token and possibly a refresh token. The primary device can then use the access token to make API calls for the user.
+
+#### Calling an API
+
+After an application gets an access token through any grant type, it can call the resource server and include the token in its request. OAuth 2.1 requires sending the token in the HTTP Authorization header or the request body, never in a URI query parameter.
+
+The common method is to send it as a bearer token in the Authorization header:
+
+```
+GET /api-endpoint HTTP/1.1
+Host: api-server.com
+Authorization: Bearer <access_token>
+```
+
+Bearer tokens can be used by anyone who has them, so if stolen, they allow unauthorized API access. To reduce this risk, OAuth 2.1 recommends safeguards such as short-lived tokens, explained later in the “Token Usage Guidance” section.
