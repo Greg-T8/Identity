@@ -91,6 +91,7 @@
       - [Authentication Request](#authentication-request)
       - [Authentication Response](#authentication-response)
       - [Token Request](#token-request)
+    - [OIDC Implicit Flow](#oidc-implicit-flow)
 
 
 ## 1. The Hydra of Modern Identity
@@ -1142,3 +1143,36 @@ Here’s the simplified table:
 | code           | Authorization code received from the authentication request.                                             |
 | redirect\_uri  | Application’s callback URL for the OpenID Provider’s response.                                           |
 | code\_verifier | PKCE value used to create the code challenge; a random 43–128 character string using allowed characters. |
+
+After a successful token request, the OpenID Provider returns the tokens in JSON format, for example:
+
+```
+HTTP/1.1 200 OK
+Content-Type: application/json;charset=UTF-8
+Cache-Control: no-store
+Pragma: no-cache
+
+{
+  "id_token": <id_token>,
+  "access_token": <access_token>,
+  "refresh_token": <refresh_token>,
+  "token_type": "Bearer",
+  "expires_in": <token lifetime>
+}
+```
+
+This includes the ID Token, access token, optional refresh token, token type, and token lifetime in seconds.
+
+| Parameter      | Meaning                                            |
+| -------------- | -------------------------------------------------- |
+| id\_token      | ID Token with user claims.                         |
+| access\_token  | Token for the OpenID Provider’s UserInfo endpoint. |
+| refresh\_token | Token to obtain new access tokens, if provided.    |
+| token\_type    | Usually `"Bearer"` unless otherwise specified.     |
+| expires\_in    | Access token lifetime in seconds.                  |
+
+Before using the claims in an ID Token, the application must validate it according to the OpenID Provider’s guidance and the JWT specification.
+
+User claims can then be retrieved either directly from the ID Token or by using the access token to call the OpenID Provider’s UserInfo endpoint.
+
+#### OIDC Implicit Flow
