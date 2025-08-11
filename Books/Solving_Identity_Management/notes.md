@@ -5,6 +5,9 @@
 <details>
 <summary>Book Resources</summary>
 
+- [OAuth 2.0 Authorization Framework](https://datatracker.ietf.org/doc/html/rfc6749)
+- [OAuth 2.1 Authorization Framework](https://datatracker.ietf.org/doc/html/draft-ietf-oauth-v2-1-06#name-introduction-2)
+- 
   
 </details>
 
@@ -68,6 +71,13 @@
       - [Authorization Response](#authorization-response)
       - [Polling the Authorization Server](#polling-the-authorization-server)
     - [Calling an API](#calling-an-api)
+    - [Refresh Tokens](#refresh-tokens)
+  - [Token Usage Guidance](#token-usage-guidance)
+    - [Access Tokens](#access-tokens)
+    - [Refresh Tokens](#refresh-tokens-1)
+    - [Confidentiality and Integrity](#confidentiality-and-integrity)
+    - [Token Revocation](#token-revocation)
+- [6. OpenID Connect](#6-openid-connect)
 
 
 ## 1. The Hydra of Modern Identity
@@ -836,7 +846,9 @@ Once the user authorizes the request, the next poll will return an access token 
 
 #### Calling an API
 
-After an application gets an access token through any grant type, it can call the resource server and include the token in its request. OAuth 2.1 requires sending the token in the HTTP Authorization header or the request body, never in a URI query parameter.
+After an application gets an access token through any grant type, it can call the resource server and include the token in its request. 
+
+OAuth 2.1 requires sending the token in the HTTP Authorization header or the request body, never in a URI query parameter.
 
 The common method is to send it as a bearer token in the Authorization header:
 
@@ -847,3 +859,81 @@ Authorization: Bearer <access_token>
 ```
 
 Bearer tokens can be used by anyone who has them, so if stolen, they allow unauthorized API access. To reduce this risk, OAuth 2.1 recommends safeguards such as short-lived tokens, explained later in the “Token Usage Guidance” section.
+
+#### Refresh Tokens
+
+Access tokens eventually expire. While an application could request a new authorization each time, doing so with short-lived tokens would mean frequent, inconvenient consent prompts for users.
+
+OAuth 2 offers a better option using refresh tokens. An authorization server may return a refresh token along with an access token. When the access token expires, the application can use the refresh token to get a new one without user interaction—even if the user is offline. This is especially useful for native mobile apps that need continuous API access.
+
+OAuth 2 does not define how to request refresh tokens; each authorization server handles this differently. Some issue them automatically, while others require an explicit request. (OIDC adds a defined method for certain cases.) You’ll need to check your server’s documentation for specifics.
+
+Example request for a new access token with a refresh token:
+
+```
+POST /token HTTP/1.1
+Host: authorizationserver.com
+Authorization: Basic <encoded application credentials>
+Content-Type: application/x-www-form-urlencoded
+
+grant_type=refresh_token
+& refresh_token=<refresh_token>
+```
+
+The server returns an access token similar to earlier examples. The optional `scope` parameter can match or be narrower than the original scope. The client credentials must match those from the original request.
+
+Refresh tokens are mainly for flows where the user is the resource owner. They’re unnecessary for the client credentials grant, since the app can request new access tokens directly without user involvement.
+
+### Token Usage Guidance
+
+#### Access Tokens
+
+An access token is meant for use by a resource server API, not for the application to read (unless using proprietary extensions). Its format depends on the authorization server—it could be an opaque token or a JSON Web Token (JWT).
+
+* **Opaque token:** The resource server must call the authorization server’s introspection endpoint to get token details.
+* **JWT:** Self-contained, allowing the resource server to read its claims directly.
+
+In both cases, the resource server must validate the token before using it. Validation steps vary by implementation.
+
+Access tokens expire, and short lifetimes are recommended. Tokens should be refreshed only when needed, following the principle of least privilege, rather than constantly keeping one active. Expiration time should match the sensitivity of the resource. Tokens can be cached until they expire to improve performance and avoid rate limits.
+
+A token must include the correct scope for the API calls it will make. Avoid broad scopes like `do:anything`; instead, request the minimum needed for the scenario (e.g., a viewer app should request `get:documents`, not edit or delete permissions). Scopes should describe coarse-grained privileges, not individual resources, to avoid administrative complexity.
+
+Where possible, tie the token to a specific resource server using a `resource` or `audience` parameter. This prevents a token for one resource server from being used on another and reduces the risk of abuse.
+
+#### Refresh Tokens
+
+Refresh tokens let applications get new access tokens without user interaction, enabling short-lived access tokens that reduce the impact of theft. But refresh tokens themselves are sensitive—if stolen, they can be used to generate new access tokens. Both access and refresh tokens must be securely stored using platform-specific secure storage. For single-page applications in browsers, secure storage is limited, making long-lived refresh tokens risky, especially for public clients.
+
+**Ways to reduce refresh token theft risk:**
+
+* **Refresh token rotation:** Each time an access token is renewed, the server issues a new, single-use refresh token. If the same refresh token is used by two clients (legitimate and malicious), the server detects this and revokes it.
+* **Sender-constrained tokens:** Bind a token to the client that requested it so it can’t be used elsewhere.
+
+Two main sender-constrained methods:
+
+1. **Mutual-TLS:** The client authenticates with a certificate, and the token is bound to that certificate. The client must prove possession of the matching private key when using the token.
+2. **DPoP (Demonstrating Proof-of-Possession):** The client signs a JWT containing its public key when requesting a token. The server binds the token to the public key. When using the token, the client sends another signed proof to show it still holds the key.
+
+OAuth 2.1 requires public clients to use either refresh token rotation or sender-constrained tokens to limit refresh token abuse. Adoption varies, so you should check your OAuth provider’s documentation for supported methods.
+
+#### Confidentiality and Integrity
+
+All OAuth 2 interactions should use a current, secure version of TLS—between the application and the authorization server, between the application and the resource server, and (if applicable) between the resource server and authorization server.
+
+OAuth 2 requires TLS for authorization and token endpoint requests, and applications should enforce TLS for callbacks. Additional guidance is in the OAuth 2.1 Security Considerations section.
+
+Applications must:
+
+* Protect access and refresh tokens in secure storage.
+* Validate tokens as recommended by the authorization server.
+* Perform TLS certificate checks to ensure requests go to the correct resource server.
+* Prevent token leakage.
+* Follow secure coding practices, including protections against XSS and CSRF, where relevant.
+
+#### Token Revocation
+
+Applications should revoke refresh and access tokens when they’re no longer needed. OAuth 2.0 Token Revocation defines how a client can request token revocation, but support for revoking access tokens is optional—some authorization servers may not allow it. Check your OAuth provider’s documentation for details. Token revocation in the context of logout is covered in Chapter 13.
+
+
+## 6. OpenID Connect
